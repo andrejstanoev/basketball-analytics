@@ -20,3 +20,5 @@ constants.py
 
 spark-warehouse/
 derby.log
+
+testing.ipynb
