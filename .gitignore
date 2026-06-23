@@ -22,3 +22,5 @@ spark-warehouse/
 derby.log
 
 testing.ipynb
+
+bronze/
