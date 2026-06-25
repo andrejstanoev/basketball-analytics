@@ -1,15 +1,7 @@
 from nba_api.stats.endpoints import leaguegamelog
 import json, time, os
-from utils import get_all_seasons
-
-os.makedirs("../raw_data/games", exist_ok=True)
-
-# start = 1900
-# seasons = []
-# for num in range(85, 96):
-#     season = start + num
-#     season_string = f"{season}-{str(num+1).zfill(2)}"
-#     seasons.append(season_string)
+from utils import get_all_seasons, get_logger
+from constants import BRONZE_DIR, CURRENT_SEASON
 
 seasons = get_all_seasons()
 
@@ -18,29 +10,30 @@ season_types = {
     'Playoffs': 'playoffs'
 }
 
+logger = get_logger("getting_all_games")
+
 for s in seasons:
-    for season_type, label in season_types.items():
+    if s != CURRENT_SEASON and os.path.exists(f"{BRONZE_DIR}/games/season={s}"):
+        logger.info(f"Skipping for season {s}")
+        continue
+    else:
+        os.makedirs(f"{BRONZE_DIR}/games/season={s}", exist_ok=True)
 
-        if os.path.exists(f"../raw_data/games/games_{s}_{label}_log.json"):
-            print(f"⏭️ Skipping, games already fetched for season {s}")
-            continue
+        for season_type, label in season_types.items():
+            try:
+                logger.info(f"Fetching {s} {season_type}...")
+                games = leaguegamelog.LeagueGameLog(
+                    season=s,
+                    season_type_all_star=season_type
+                )
+                data = json.loads(games.get_normalized_json())
 
-        try:
-            print(f"Fetching {s} {season_type}...")
+                with open(f"{BRONZE_DIR}/games/season={s}/games_{s}_{label}_log.json","w") as f:
+                    json.dump(data, f, indent=4)
 
-            games = leaguegamelog.LeagueGameLog(
-                season=s,
-                season_type_all_star=season_type
-            )
-            data = json.loads(games.get_normalized_json())
+                logger.info(f"Saved games for {s} {label}")
 
-            filename = f"../raw_data/games/games_{s}_{label}_log.json"
-            with open(filename, "w") as f:
-                json.dump(data, f, indent=4)
+            except Exception as e:
+                logger.error(f"Error: {repr(e)}")
 
-            print(f"✅ Saved {filename}")
-
-        except Exception as e:
-            print(f"❌ Failed {s} {season_type}: {e}")
-
-        time.sleep(4)
+            time.sleep(4)

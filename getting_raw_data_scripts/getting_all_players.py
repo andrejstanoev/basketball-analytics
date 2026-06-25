@@ -4,6 +4,7 @@ from utils import get_logger
 from nba_api.stats.static import players
 import json
 from datetime import date
+from getting_raw_data_scripts.getting_players_info import run_player_info_ingestion
 
 logger = get_logger("getting_all_players.py")
 
@@ -28,6 +29,8 @@ def run_player_ingestion():
                 json.dump(all_players, f, indent=4)
 
             logger.info("Completed the ingestion process for the players")
+
+            # run_player_info_ingestion(file_path)
 
         except Exception as e:
             logger.error(f"Error: {repr(e)}")

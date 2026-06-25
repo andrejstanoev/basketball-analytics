@@ -1,28 +1,48 @@
-import pandas as pd
-import time
+import time, os, pandas as pd
 from nba_api.stats.endpoints import teaminfocommon, teamdetails
+from utils import get_logger
+from datetime import date
+from constants import BRONZE_DIR
 
-all_teams = pd.read_json("../raw_data/all_teams.json")
+logger = get_logger("getting_team_details.py")
 
-all_teams_ids = all_teams["id"].tolist()
+def run_team_details_ingestion():
+    today_date = date.today()
 
-all_results = []
-for team_id in all_teams_ids:
-    try:
-        df = teaminfocommon.TeamInfoCommon(team_id=team_id).get_data_frames()
-        team_info_df = df[0]
-        df_1 = teamdetails.TeamDetails(team_id=team_id).get_data_frames()
-        team_details_df = df_1[0]
-        res = team_info_df.merge(right=team_details_df,how="inner",on="TEAM_ID" )
+    file_path = f"{BRONZE_DIR}/teams_details/ingest_date={today_date}/team_details.json"
 
-        all_results.append(res)
-        print(f"✅ Done team {team_id}")
-    except Exception as e:
-        print(f"❌ Failed team {team_id}: {e}")
+    if os.path.exists(file_path):
+        logger.warning(f"Data for team details already ingested for {today_date}, skipping")
+    else:
+        teams_path = f"{BRONZE_DIR}/teams/ingest_date={today_date}/teams.json"
+        all_teams = pd.read_json(teams_path)
 
-    time.sleep(2)
+        team_ids = all_teams["id"].tolist()
+        results = []
+        for team_id in team_ids:
+            try:
+                logger.info(f"Fetching details for team with id={team_id}")
+                dfs_1 = teaminfocommon.TeamInfoCommon(team_id=team_id).get_data_frames()
+                team_common_df = dfs_1[0]
 
+                dfs_2 = teamdetails.TeamDetails(team_id=team_id).get_data_frames()
+                team_details_df = dfs_2[0]
 
-final_df = pd.concat(all_results, ignore_index=True)
+                res = team_common_df.merge(right=team_details_df, how="inner", on="TEAM_ID")
 
-final_df.to_json("../raw_data/team_info/all_teams_info.json", orient="records", indent=4)
+                results.append(res)
+                logger.info(f"Got details for team with id={team_id}")
+
+            except Exception as e:
+                logger.error(f"Error: {repr(e)}")
+
+            time.sleep(3)
+
+        final_df = pd.concat(results, ignore_index=True)
+
+        os.makedirs(f"{BRONZE_DIR}/teams_details/ingest_date={today_date}/", exist_ok=True)
+
+        final_df.to_json(f"{BRONZE_DIR}/teams_details/ingest_date={today_date}/team_details.json", orient="records", indent=4)
+
+if __name__ == "__main__":
+    run_team_details_ingestion()
