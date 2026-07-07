@@ -21,6 +21,7 @@ for s in seasons:
 
         for season_type, label in season_types.items():
             try:
+
                 logger.info(f"Fetching {s} {season_type}...")
                 games = leaguegamelog.LeagueGameLog(
                     season=s,
@@ -28,7 +29,9 @@ for s in seasons:
                 )
                 data = json.loads(games.get_normalized_json())
 
-                with open(f"{BRONZE_DIR}/games/season={s}/games_{s}_{label}_log.json","w") as f:
+                os.makedirs(f"{BRONZE_DIR}/games/season={s}/type={label}", exist_ok=True)
+
+                with open(f"{BRONZE_DIR}/games/season={s}/type={label}/games.json","w") as f:
                     json.dump(data, f, indent=4)
 
                 logger.info(f"Saved games for {s} {label}")

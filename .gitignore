@@ -4,7 +4,8 @@ venv/
 
 
 raw_data/
-
+silver/
+test_spark_scripts/
 
 __pycache__/
 *.pyc

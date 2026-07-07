@@ -1,4 +1,5 @@
 from pyspark.sql import SparkSession
+from pyspark.sql.functions import when, trim, lit
 from constants import *
 import logging
 import colorlog
@@ -15,7 +16,7 @@ def create_spark_session(app_name):
 
 
 def get_all_seasons():
-    return [f"{year}-{str(year + 1)[-2:]}" for year in range(1985, 2026)]
+    return [f"{year}-{str(year + 1)[-2:]}" for year in range(START, END)]
 
 
 def get_logger(name):
@@ -40,3 +41,6 @@ def get_logger(name):
     logger.setLevel(logging.DEBUG)
 
     return logger
+
+def clean_string(column, default="Unknown"):
+    return when( column.isNull() | (trim(column) == ""), lit(default) ).otherwise(column)
