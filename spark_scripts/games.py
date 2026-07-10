@@ -38,6 +38,8 @@ final_df = joined.select(
     col("home.GAME_ID"),
     col("home.TEAM_ID").alias("home_team_id"),
     col("away.TEAM_ID").alias("away_team_id"),
+    when( col("home.WL") == "W", col("home.TEAM_ID") ).otherwise( col("away.TEAM_ID") ).alias( "winner_team_id" ),
+    when( col("home.WL") == "L", col("home.TEAM_ID") ).otherwise( col("away.TEAM_ID") ).alias( "loser_team_id" ),
     col("home.season"),
     col("home.GAME_DATE").alias("game_date"),
     col("home.type")
