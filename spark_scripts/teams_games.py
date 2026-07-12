@@ -4,60 +4,65 @@ from constants import BRONZE_DIR, SILVER_DIR
 from utils import get_logger
 import os
 
-logger = get_logger("teams_games.py")
+def teams_games_transformation():
 
-spark = SparkSession.builder.master("local[*]").appName("teams_games").getOrCreate()
-logger.info("Created spark session called teams_games")
+    logger = get_logger("teams_games.py")
 
-data = spark.read.format("json").option("multiline",True).load(f"{BRONZE_DIR}/games")
-logger.info("Read the data from bronze directory games folder")
+    spark = SparkSession.builder.master("local[*]").appName("teams_games").getOrCreate()
+    logger.info("Created spark session called teams_games")
 
-data_2 = data.select(
-    explode( col("LeagueGameLog") ).alias("logs"),
-    col("season"),
-    col("type")
-)
+    data = spark.read.format("json").option("multiline",True).load(f"{BRONZE_DIR}/games")
+    logger.info("Read the data from bronze directory games folder")
 
-final_data = data_2.select(
-    col("logs.*"),
-    col("season"),
-    col("type")
-)
-logger.info("Destructured the data")
+    data_2 = data.select(
+        explode( col("LeagueGameLog") ).alias("logs"),
+        col("season"),
+        col("type")
+    )
 
-final_df = final_data.select(
-    col("season"),
-    col("type"),
-    col("TEAM_ID").alias("team_id"),
-    col("GAME_ID").alias("game_id"),
-    col("WL").alias("win_loss"),
-    col("MIN").alias("minutes"),
-    col("PTS").alias("points"),
-    col("AST").alias("assists"),
-    col("DREB").alias("defensive_rebounds"),
-    col("OREB").alias("offensive_rebounds"),
-    col("REB").alias("rebounds"),
-    col("BLK").alias("blocks"),
-    col("FG3A").alias("field_goals_3_attempted"),
-    col("FG3M").alias("field_goals_3_made"),
-    col("FG3_PCT").alias("field_goal_3_percentage"),
-    col("FGA").alias("field_goals_attempted"),
-    col("FGM").alias("field_goals_made"),
-    col("FG_PCT").alias("field_goal_percentage"),
-    col("FTA").alias("free_throws_attempted"),
-    col("FTM").alias("free_throws_made"),
-    col("FT_PCT").alias("free_throw_percentage"),
-    col("PF").alias("personal_fouls"),
-    col("STL").alias("steals"),
-    col("TOV").alias("turnovers"),
-    col("PLUS_MINUS").alias("plus_minus")
-)
-logger.info("Selected the columns that i need")
+    final_data = data_2.select(
+        col("logs.*"),
+        col("season"),
+        col("type")
+    )
+    logger.info("Destructured the data")
 
-os.makedirs(f"{SILVER_DIR}/teams_games", exist_ok=True )
+    final_df = final_data.select(
+        col("season"),
+        col("type"),
+        col("TEAM_ID").alias("team_id"),
+        col("GAME_ID").alias("game_id"),
+        col("WL").alias("win_loss"),
+        col("MIN").alias("minutes"),
+        col("PTS").alias("points"),
+        col("AST").alias("assists"),
+        col("DREB").alias("defensive_rebounds"),
+        col("OREB").alias("offensive_rebounds"),
+        col("REB").alias("rebounds"),
+        col("BLK").alias("blocks"),
+        col("FG3A").alias("field_goals_3_attempted"),
+        col("FG3M").alias("field_goals_3_made"),
+        col("FG3_PCT").alias("field_goal_3_percentage"),
+        col("FGA").alias("field_goals_attempted"),
+        col("FGM").alias("field_goals_made"),
+        col("FG_PCT").alias("field_goal_percentage"),
+        col("FTA").alias("free_throws_attempted"),
+        col("FTM").alias("free_throws_made"),
+        col("FT_PCT").alias("free_throw_percentage"),
+        col("PF").alias("personal_fouls"),
+        col("STL").alias("steals"),
+        col("TOV").alias("turnovers"),
+        col("PLUS_MINUS").alias("plus_minus")
+    )
+    logger.info("Selected the columns that i need")
 
-final_df.write.format("parquet").mode("overwrite").save(f"{SILVER_DIR}/teams_games")
-logger.info("Written the data to the silver layer")
+    os.makedirs(f"{SILVER_DIR}/teams_games", exist_ok=True )
 
-spark.stop()
-logger.info("Stopped spark session named teams_games")
+    final_df.write.format("parquet").mode("overwrite").save(f"{SILVER_DIR}/teams_games")
+    logger.info("Written the data to the silver layer")
+
+    spark.stop()
+    logger.info("Stopped spark session named teams_games")
+
+if __name__ == "__main__":
+    teams_games_transformation()
