@@ -1,5 +1,7 @@
+import datetime
+
 from pyspark.sql import SparkSession, DataFrame
-from pyspark.sql.functions import row_number, col, concat, lit, coalesce, trim, when, upper,explode
+from pyspark.sql.functions import col, lit, explode
 from constants import BRONZE_DIR, SILVER_DIR
 from utils import get_logger, clean_integer
 import os
@@ -63,8 +65,20 @@ def player_games_transformation():
 
     os.makedirs(f"{SILVER_DIR}/player_games", exist_ok=True )
 
-    final_df.write.format("parquet").mode("overwrite").partitionBy("season").save(f"{SILVER_DIR}/player_games")
-    logger.info("Written the data to the silver layer")
+    try:
+
+        current_df = spark.read.format("parquet").load(f"{SILVER_DIR}/player_games")
+
+        final_df: DataFrame = final_df.join(current_df,"game_id", "leftanti")
+
+    except Exception:
+        logger.info("There does not exist any silver data for player_games, all rows are new")
+
+
+    final_df: DataFrame = final_df.withColumn("last_modified", lit(datetime.date.today()))
+
+    final_df.write.format("parquet").mode("append").partitionBy("season").save(f"{SILVER_DIR}/player_games")
+    logger.info(f"Written {final_df.count()} new rows to the silver layer")
 
     spark.stop()
     logger.info("Stopped spark session named player_games")
