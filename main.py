@@ -37,7 +37,7 @@ logger.info("Finished the team ingestion")
 #============================================================
 
 logger.info("Starting the player info ingestion")
-#run_player_info_ingestion()
+run_player_info_ingestion()
 logger.info("Finished the player info ingestion")
 
 #4

@@ -7,7 +7,7 @@ raw_data/
 silver/
 
 test_spark_scripts/
-duck_db_scripts/
+
 
 __pycache__/
 *.pyc
