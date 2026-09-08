@@ -13,6 +13,15 @@ from spark_scripts.games import games_transformation
 from spark_scripts.teams_games import teams_games_transformation
 from spark_scripts.player_games import player_games_transformation
 
+from duck_db_scripts.creating_dimensions import create_dimensions
+from duck_db_scripts.creating_fact_tables import create_fact_tables
+from duck_db_scripts.dim_game_etl import dim_game_etl_process
+from duck_db_scripts.dim_date_etl import dim_date_etl_process
+from duck_db_scripts.dim_player_etl import dim_player_etl_process
+from duck_db_scripts.dim_team_etl import dim_team_etl_process
+from duck_db_scripts.fact_player_games_etl import fact_player_games_etl_process
+from duck_db_scripts.fact_team_games_etl import fact_team_games_etl_process
+
 logger = get_logger("main.py")
 
 logger.info("Starting the whole process")
@@ -92,3 +101,53 @@ player_games_transformation()
 logger.info("Finished player_games transformation")
 
 logger.info("All the processes finished")
+
+#==============================================GOLD LAYER===============================================
+
+#1
+#=================================================================
+logger.info("Starting creating dimensions")
+create_dimensions()
+logger.info("Finished creating dimensions")
+
+#2
+#=================================================================
+logger.info("Starting creating fact tables")
+create_fact_tables()
+logger.info("Finished creating fact tables")
+
+#3
+#=================================================================
+logger.info("Starting date dimension etl process")
+dim_date_etl_process()
+logger.info("Finished date dimension etl process")
+
+#4
+#=================================================================
+logger.info("Starting game dimension etl process")
+dim_game_etl_process()
+logger.info("Finished game dimension etl process")
+
+#5
+#=================================================================
+logger.info("Starting player dimension etl process")
+dim_player_etl_process()
+logger.info("Finished player dimension etl process")
+
+#6
+#=================================================================
+logger.info("Starting team dimension etl process")
+dim_team_etl_process()
+logger.info("Finished team dimension etl process")
+
+#7
+#=================================================================
+logger.info("Starting player games fact table etl process")
+fact_player_games_etl_process()
+logger.info("Finished player games fact table etl process")
+
+#8
+#=================================================================
+logger.info("Starting team games fact table etl process")
+fact_team_games_etl_process()
+logger.info("Finished team games fact table etl process")
