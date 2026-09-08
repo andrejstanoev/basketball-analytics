@@ -1,14 +1,14 @@
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.functions import row_number, col, concat, lit, coalesce, trim, when, upper,explode
 from constants import BRONZE_DIR, SILVER_DIR
-from utils import get_logger
+from utils import get_logger, clean_integer
 import os
 
 def player_games_transformation():
 
     logger = get_logger("player_games.py")
 
-    spark = SparkSession.builder.master("local[*]").appName("player_games").getOrCreate()
+    spark = SparkSession.builder.master("local[*]").appName("player_games").config("spark.driver.memory", "4g").config("spark.executor.memory", "4g").config("spark.driver.maxResultSize", "2g").getOrCreate()
     logger.info("Created spark session called player_games")
 
     data = spark.read.format("json").option("multiline",True).load(f"{BRONZE_DIR}/players_games")
@@ -34,36 +34,36 @@ def player_games_transformation():
         col("GAME_ID").alias("game_id"),
         col("TEAM_ID").alias("team_id"),
         col("GAME_DATE").alias("game_date"),
-        col("MIN").alias("minutes"),
-        col("PTS").alias("points"),
-        col("AST").alias("assists"),
-        col("BLK").alias("blocks"),
-        col("BLKA").alias("blocks_against"),
-        col("DD2").alias("has_double_double"),
-        col("TD3").alias("has_triple_double"),
-        col("DREB").alias("defensive_rebounds"),
-        col("OREB").alias("offensive_rebounds"),
-        col("REB").alias("rebounds"),
-        col("STL").alias("steals"),
-        col("TOV").alias("turnovers"),
-        col("FG3A").alias("field_goals_3_attempted"),
-        col("FG3M").alias("field_goals_3_made"),
-        col("FG3_PCT").alias("field_goals_3_percentage"),
-        col("FGA").alias("field_goals_attempted"),
-        col("FGM").alias("field_goals_made"),
-        col("FG_PCT").alias("field_goals_percentage"),
-        col("FTA").alias("free_throws_attempted"),
-        col("FTM").alias("free_throws_made"),
-        col("FT_PCT").alias("free_throw_percentage"),
-        col("PF").alias("personal_fouls"),
-        col("PFD").alias("personal_fouls_drawn"),
-        col("PLUS_MINUS").alias("plus_minus")
+        clean_integer(col("MIN")).alias("minutes"),
+        clean_integer(col("PTS")).alias("points"),
+        clean_integer(col("AST")).alias("assists"),
+        clean_integer(col("BLK")).alias("blocks"),
+        clean_integer(col("BLKA")).alias("blocks_against"),
+        clean_integer(col("DD2")).alias("has_double_double"),
+        clean_integer(col("TD3")).alias("has_triple_double"),
+        clean_integer(col("DREB")).alias("defensive_rebounds"),
+        clean_integer(col("OREB")).alias("offensive_rebounds"),
+        clean_integer(col("REB")).alias("rebounds"),
+        clean_integer(col("STL")).alias("steals"),
+        clean_integer(col("TOV")).alias("turnovers"),
+        clean_integer(col("FG3A")).alias("field_goals_3_attempted"),
+        clean_integer(col("FG3M")).alias("field_goals_3_made"),
+        clean_integer(col("FG3_PCT")).alias("field_goals_3_percentage"),
+        clean_integer(col("FGA")).alias("field_goals_attempted"),
+        clean_integer(col("FGM")).alias("field_goals_made"),
+        clean_integer(col("FG_PCT")).alias("field_goals_percentage"),
+        clean_integer(col("FTA")).alias("free_throws_attempted"),
+        clean_integer(col("FTM")).alias("free_throws_made"),
+        clean_integer(col("FT_PCT")).alias("free_throw_percentage"),
+        clean_integer(col("PF")).alias("personal_fouls"),
+        clean_integer(col("PFD")).alias("personal_fouls_drawn"),
+        clean_integer(col("PLUS_MINUS")).alias("plus_minus")
     )
     logger.info("Selected the columns that i need")
 
     os.makedirs(f"{SILVER_DIR}/player_games", exist_ok=True )
 
-    final_data.write.format("parquet").mode("overwrite").save(f"{SILVER_DIR}/player_games")
+    final_df.write.format("parquet").mode("overwrite").partitionBy("season").save(f"{SILVER_DIR}/player_games")
     logger.info("Written the data to the silver layer")
 
     spark.stop()

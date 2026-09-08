@@ -1,78 +1,113 @@
-
-import os.path, time, json, pandas as pd
-
-from requests import ReadTimeout
-
-from utils import get_logger
-from nba_api.stats.endpoints import commonplayerinfo
+import asyncio
+import os
+import time
+import json
+import pandas as pd
 from datetime import date
+from requests import ReadTimeout
+from nba_api.stats.endpoints import commonplayerinfo
 from constants import BRONZE_DIR
-
+from utils import get_logger
 
 logger = get_logger("getting_player_info.py")
 
-def fetch_player_with_retry(player_id, retries):
+def fetch_player_info_sync(player_id, retries=3):
+
     for attempt in range(retries):
         try:
             info = commonplayerinfo.CommonPlayerInfo(
                 player_id=player_id,
                 timeout=60
             )
-            return info
-        except ReadTimeout:
+            data = json.loads(info.get_normalized_json())
+            return data["CommonPlayerInfo"][0]
+
+        except (ReadTimeout, ConnectionError) as e:
             wait = 10 * (attempt + 1)
-            logger.warning(f"Timeout for {player_id}, attempt {attempt+1}, waiting {wait}s")
+            logger.warning(f"Timeout for {player_id}, attempt {attempt+1}/{retries}, waiting {wait}s")
             time.sleep(wait)
+
+        except KeyError as e:
+            logger.warning(f"Player {player_id} has no data in NBA system, skipping: {e}")
+            return None
+
+        except Exception as e:
+            logger.error(f"Error for player {player_id}: {repr(e)}")
+            return None
+
+    logger.error(f"All retries failed for player {player_id}")
     return None
 
-def extract_player_info(info):
-    info_data = json.loads(info.get_normalized_json())
-    return info_data["CommonPlayerInfo"][0]
+
+async def fetch_player_async(player_id):
+
+    return await asyncio.to_thread(fetch_player_info_sync, player_id)
+
+
+async def fetch_batch(player_ids_batch):
+
+    tasks = [fetch_player_async(player_id) for player_id in player_ids_batch]
+    results = await asyncio.gather(*tasks)
+    return results
+
+
+async def run_ingestion_async(players_ids):
+
+    batch_size = 3
+    all_results = []
+    total = len(players_ids)
+
+    for i in range(0, total, batch_size):
+        batch = players_ids[i:i + batch_size]
+        logger.info(f"Processing batch {i//batch_size + 1} — players {i+1} to {min(i+batch_size, total)} of {total}")
+
+
+        results = await fetch_batch(batch)
+
+
+        for player_id, result in zip(batch, results):
+            if result is not None:
+                all_results.append(result)
+                logger.info(f"✅ Got info for player {player_id}")
+            else:
+                logger.warning(f"⚠️ Skipped player {player_id}")
+
+
+        if i + batch_size < total:
+            logger.info("Waiting 2 seconds before next batch...")
+            await asyncio.sleep(2)
+
+    return all_results
+
 
 def run_player_info_ingestion():
     today_date = date.today()
-
     file_path = f"{BRONZE_DIR}/players_info/ingest_date={today_date}/players_info.json"
 
     if os.path.exists(file_path):
-        logger.warning(f"Data for the players already ingested for {today_date}, skipping")
-    else:
-        players_path_file = f"{BRONZE_DIR}/players/ingest_date={today_date}/players.json"
-        all_players = pd.read_json(players_path_file)
-        players_ids = all_players["id"].tolist()
+        logger.warning(f"Already ingested for {today_date}, skipping")
+        return
 
-        json_list = []
+    players_path_file = f"{BRONZE_DIR}/players/ingest_date={today_date}/players.json"
 
-        for id in players_ids:
-            try:
-                logger.info(f"Fetching extra information for player with id={id}")
-                info = commonplayerinfo.CommonPlayerInfo(player_id=id)
-                player_info = extract_player_info(info)
+    if not os.path.exists(players_path_file):
+        logger.error(f"Players file not found: {players_path_file}")
+        return
 
-                json_list.append(player_info)
-                logger.info(f"Got the extra information for player with id={id}")
+    all_players = pd.read_json(players_path_file)
+    players_ids = all_players["id"].tolist()
+    logger.info(f"Found {len(players_ids)} players to fetch")
 
-            except (ReadTimeout, ConnectionError) as e:
-                logger.warning(f"Timeout for player {id}, retrying. Error: {repr(e)}")
-                info = fetch_player_with_retry(id,3)
-                if info is not None:
-                    player_info = extract_player_info(info)
-                    json_list.append(player_info)
-                    logger.info(f"Got the extra information for player with id={id}")
-                else:
-                    logger.error(f"Failed to fetch info for player with id={id}")
 
-            except Exception as e:
-                logger.error(f"Error for player with id={id} : {repr(e)}")
+    all_results = asyncio.run(run_ingestion_async(players_ids))
 
-            time.sleep(2)
+    os.makedirs(f"{BRONZE_DIR}/players_info/ingest_date={today_date}/", exist_ok=True)
 
-        os.makedirs(f"{BRONZE_DIR}/players_info/ingest_date={today_date}/", exist_ok=True)
+    with open(file_path, "w") as f:
+        json.dump(all_results, f, indent=4)
 
-        with open(f"{BRONZE_DIR}/players_info/ingest_date={today_date}/players_info.json", "w") as f:
-            json.dump(json_list,f,indent=4)
+    logger.info(f"✅ Saved {len(all_results)} players to {file_path}")
 
-        logger.info("Completed the ingestion process for the players extra information")
 
 if __name__ == "__main__":
     run_player_info_ingestion()

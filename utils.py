@@ -44,3 +44,6 @@ def get_logger(name):
 
 def clean_string(column, default="Unknown"):
     return when( column.isNull() | (trim(column) == ""), lit(default) ).otherwise(column)
+
+def clean_integer(column, default = 0):
+    return when( column.isNull() , lit(default) ).otherwise(column)

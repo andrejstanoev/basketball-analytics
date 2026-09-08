@@ -3,7 +3,7 @@ from constants import BRONZE_DIR, SILVER_DIR
 from pyspark.sql.window import Window
 from pyspark.sql.functions import row_number, col, concat, lit, coalesce, trim, when, upper
 from pyspark.sql.types import *
-from utils import clean_string, get_logger
+from utils import clean_string, get_logger, clean_integer
 
 def players_transformation():
 
@@ -31,7 +31,7 @@ def players_transformation():
     logger.info("partitioned by ingest date and got the latest player extra info data")
 
 
-    joined = player_latest.join(player_info_latest, player_latest["id"]==player_info_latest["PERSON_ID"], "inner")
+    joined = player_latest.join(player_info_latest, player_latest["id"]==player_info_latest["PERSON_ID"], "left")
 
 
     final_df = joined.select(
@@ -39,17 +39,17 @@ def players_transformation():
         col("full_name").alias("full_name"),
         col("BIRTHDATE").cast(DateType()).alias("birthdate"),
         col("is_active"),
-        when( trim(col("HEIGHT"))=="", "Unknown" ).otherwise(col("HEIGHT")).alias("height"), #some "" values
-        when( trim( col("WEIGHT") )=="", None ).otherwise(col("WEIGHT").cast(DoubleType())).alias("weight"),
-        col("SEASON_EXP").alias("season_experience"),
-        col("POSITION").alias("position"),
-        col("FROM_YEAR").alias("from_year"),
-        col("TO_YEAR").alias("to_year"),
-        col("DRAFT_YEAR").alias("draft_year"),
-        col("DRAFT_ROUND").alias("draft_round"),
-        col("DRAFT_NUMBER").alias("draft_number"),
-        col("SCHOOL").alias("school"),
-        col("COUNTRY").alias("country")
+        clean_string(col("HEIGHT")).alias("height"), #some "" values
+        when( trim( col("WEIGHT") )=="", 0 ).otherwise(col("WEIGHT").cast(DoubleType())).alias("weight"),
+        clean_integer(col("SEASON_EXP")).alias("season_experience"),
+        clean_string(col("POSITION")).alias("position"),
+        clean_integer(col("FROM_YEAR")).alias("from_year"),
+        clean_integer(col("TO_YEAR")).alias("to_year"),
+        clean_string(col("DRAFT_YEAR")).alias("draft_year"),
+        clean_string(col("DRAFT_ROUND")).alias("draft_round"),
+        clean_string(col("DRAFT_NUMBER")).alias("draft_number"),
+        clean_string(col("SCHOOL")).alias("school"),
+        clean_string(col("COUNTRY")).alias("country")
     )
 
     final_df.write.format("parquet").mode("overwrite").save(f"{SILVER_DIR}/players")
