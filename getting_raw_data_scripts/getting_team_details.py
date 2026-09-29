@@ -15,6 +15,11 @@ def run_team_details_ingestion():
         logger.warning(f"Data for team details already ingested for {today_date}, skipping")
     else:
         teams_path = f"{BRONZE_DIR}/teams/ingest_date={today_date}/teams.json"
+
+        if not os.path.exists(teams_path):
+            logger.error(f"Teams file not found: {teams_path}")
+            return
+
         all_teams = pd.read_json(teams_path)
 
         team_ids = all_teams["id"].tolist()
