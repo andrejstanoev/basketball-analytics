@@ -12,6 +12,7 @@ def dim_date_etl_process():
 
     logger.info("Starting process...")
     connection.sql("""
+    TRUNCATE TABLE dim_date;
     INSERT INTO dim_date
     SELECT
         CAST(strftime(d, '%Y%m%d') AS INTEGER)                     AS date_key,

@@ -71,7 +71,7 @@ def create_dimensions():
     """)
     logger.info("Created sequence and team dimension")
 
-    logger.info("Creating sequence for Sket and game dimension")
+    logger.info("Creating sequence for Skey and game dimension")
     connection.sql("""
     create sequence if not exists skey_dim_games start 1;
     
@@ -96,7 +96,7 @@ def create_dimensions():
 
     logger.info("Creating sequence for Skey and date dimension")
     connection.sql("""
-    CREATE TABLE dim_date (
+    CREATE TABLE if not exists dim_date (
         date_key        INTEGER PRIMARY KEY,
         date            DATE NOT NULL,
         year            SMALLINT NOT NULL,

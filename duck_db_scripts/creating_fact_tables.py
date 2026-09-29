@@ -57,7 +57,7 @@ def create_fact_tables():
     connection.sql("""
     create sequence if not exists skey_fact_team_games start 1;
     
-    create table fact_team_games(
+    create table if not exists fact_team_games(
            Skey bigint primary key default nextval('skey_fact_team_games'),
            season varchar,
            type varchar,

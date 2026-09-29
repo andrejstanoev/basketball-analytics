@@ -20,11 +20,11 @@ def dim_game_etl_process():
                a_t.full_team_name as away_team_name,
                g.winner_team_id,
                case when g.winner_team_id = g.home_team_id then ht.full_team_name
-                    when g.winner_team_id = g.away_team_id then aw.full_team_name
+                    when g.winner_team_id = g.away_team_id then a_t.full_team_name
                end                                         as winner_team_name,
                g.loser_team_id,
                 case when g.loser_team_id = g.home_team_id then ht.full_team_name
-                    when g.loser_team_id = g.away_team_id then aw.full_team_name
+                    when g.loser_team_id = g.away_team_id then a_t.full_team_name
                end                                         as loser_team_name,
                g.season,
                g.game_date,
