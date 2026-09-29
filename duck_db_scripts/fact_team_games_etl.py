@@ -53,7 +53,7 @@ def fact_team_games_etl_process():
            tg.turnovers,
            tg.plus_minus,
     from read_parquet('silver/teams_games/*.parquet') as tg
-    join dim_team as dt on dt.team_id = tg.team_id
+    join dim_team as dt on dt.team_id = tg.team_id and dt.SCD_IsCurrent = 1
     join dim_game as dg on dg.game_id = tg.game_id
     where tg.last_modified > getvariable('last_job_date');
     

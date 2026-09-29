@@ -11,7 +11,7 @@ def create_fact_tables():
     logger.info("Created a connection to the database")
 
     logger.info("Creating sequence for Skey and table fact_player_games")
-    #transactional fact table
+
     connection.sql("""
     create sequence if not exists skey_fact_player_games start 1;
     create table if not exists fact_player_games(
@@ -53,7 +53,7 @@ def create_fact_tables():
 
 
     logger.info("Creating sequence for Skey and table fact_team_games")
-    #transactional fact table
+
     connection.sql("""
     create sequence if not exists skey_fact_team_games start 1;
     

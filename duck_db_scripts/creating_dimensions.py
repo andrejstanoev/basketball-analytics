@@ -118,6 +118,17 @@ def create_dimensions():
     """)
     logger.info("Created sequence and date dimension")
 
+    logger.info("Creating log table")
+    connection.sql("""
+        create sequence if not exists etl_table start 1;
+        create table if not exists etl_log(
+            id bigint primary key default nextval('etl_table'),
+            job_name varchar,
+            state varchar,
+            date date,
+        );
+        """)
+    logger.info("Created log table")
 
     logger.info("Closing the connection")
     connection.close()

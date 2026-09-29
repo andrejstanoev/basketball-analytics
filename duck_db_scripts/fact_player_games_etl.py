@@ -58,8 +58,8 @@ def fact_player_games_etl_process():
            pg.plus_minus,
     from read_parquet('silver/player_games/*/*.parquet', hive_partitioning = true) as pg
     join dim_game as dg on dg.game_id = pg.game_id
-    join dim_player as dp on dp.player_id = pg.player_id
-    join dim_team as dt on dt.team_id = pg.team_id
+    join dim_player as dp on dp.player_id = pg.player_id and dp.SCD_IsCurrent = 1
+    join dim_team as dt on dt.team_id = pg.team_id and dp.SCD_IsCurrent = 1
     where pg.last_modified > getvariable('last_job_date');
     
     
