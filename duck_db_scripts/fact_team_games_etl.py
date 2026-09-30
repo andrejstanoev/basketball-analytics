@@ -25,10 +25,11 @@ def fact_team_games_etl_process():
     
     select getvariable('last_job_date') as res;
     
-    insert into fact_team_games(season, type, team_skey, game_skey, game_date, win_loss, minutes, points, assists, defensive_rebounds, offensive_rebounds, rebounds, blocks, field_goals_3_attempted, field_goals_3_made, field_goals_3_percentage, field_goals_attempted, field_goals_made, field_goals_percentage, free_throws_attempted, free_throws_made, free_throw_percentage, personal_fouls, steals, turnovers, plus_minus)
+    insert into fact_team_games(season, type, team_skey, team_id, game_skey, game_date, win_loss, minutes, points, assists, defensive_rebounds, offensive_rebounds, rebounds, blocks, field_goals_3_attempted, field_goals_3_made, field_goals_3_percentage, field_goals_attempted, field_goals_made, field_goals_percentage, free_throws_attempted, free_throws_made, free_throw_percentage, personal_fouls, steals, turnovers, plus_minus)
     select tg.season,
            tg.type,
            dt.SKey as team_skey,
+           dt.team_id,
            dg.SKey as game_skey,
            tg.game_date,
            tg.win_loss,
