@@ -21,6 +21,7 @@ from duck_db_scripts.dim_player_etl import dim_player_etl_process
 from duck_db_scripts.dim_team_etl import dim_team_etl_process
 from duck_db_scripts.fact_player_games_etl import fact_player_games_etl_process
 from duck_db_scripts.fact_team_games_etl import fact_team_games_etl_process
+from duck_db_scripts.data_marts import create_data_marts
 
 logger = get_logger("main.py")
 
@@ -151,3 +152,9 @@ logger.info("Finished player games fact table etl process")
 logger.info("Starting team games fact table etl process")
 fact_team_games_etl_process()
 logger.info("Finished team games fact table etl process")
+
+#9
+#=================================================================
+logger.info("Starting creating data marts")
+create_data_marts()
+logger.info("Finished creating data marts")
