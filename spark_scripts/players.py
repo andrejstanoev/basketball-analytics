@@ -30,9 +30,7 @@ def players_transformation():
     player_info_latest : DataFrame = player_info_partitioned.filter( player_info_partitioned["row_number"]==1 )
     logger.info("partitioned by ingest date and got the latest player extra info data")
 
-
     joined = player_latest.join(player_info_latest, player_latest["id"]==player_info_latest["PERSON_ID"], "left")
-
 
     final_df = joined.select(
         col("id").cast(LongType()).alias("player_source_id"),
